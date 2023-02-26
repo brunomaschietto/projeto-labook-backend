@@ -59,3 +59,8 @@ export interface LikesDislikesDB {
   post_id: string,
   like: number
 }
+
+export enum POST_LIKE {
+  JA_CURTIU = "Já deu like",
+  JA_DESCURTIU = "Já deu dislike"
+}
