@@ -1,9 +1,15 @@
-import { LikesDislikesDB, PostDB, PostWithCreatorsDB, UserDB } from "../interfaces/types";
+import {
+  LikesDislikesDB,
+  PostDB,
+  PostWithCreatorsDB,
+  POST_LIKE,
+  UserDB,
+} from "../interfaces/types";
 import { BaseDataBase } from "./BaseDataBase";
 
 export class PostDataBase extends BaseDataBase {
   public static TABLE_POSTS = "posts";
-  public static TABLE_LIKES_DISLIKES = "likes_dislikes"
+  public static TABLE_LIKES_DISLIKES = "likes_dislikes";
 
   public getPostsWithCreators = async (): Promise<PostWithCreatorsDB[]> => {
     const result: PostWithCreatorsDB[] = await BaseDataBase.connection(
@@ -45,11 +51,16 @@ export class PostDataBase extends BaseDataBase {
       .delete()
       .where({ id });
   };
-  public likeOrDislikePost = async (likeDislike: LikesDislikesDB): Promise<void> => {
-    await BaseDataBase.connection(PostDataBase.TABLE_LIKES_DISLIKES)
-      .insert(likeDislike)
+  public likeOrDislikePost = async (
+    likeDislike: LikesDislikesDB
+  ): Promise<void> => {
+    await BaseDataBase.connection(PostDataBase.TABLE_LIKES_DISLIKES).insert(
+      likeDislike
+    );
   };
-  public findPostsWithCreatorById = async (postId: string): Promise<PostWithCreatorsDB | undefined> => {
+  public findPostsWithCreatorById = async (
+    postId: string
+  ): Promise<PostWithCreatorsDB | undefined> => {
     const result: PostWithCreatorsDB[] = await BaseDataBase.connection(
       PostDataBase.TABLE_POSTS
     )
@@ -64,7 +75,46 @@ export class PostDataBase extends BaseDataBase {
         "users.name AS creator_name"
       )
       .join("users", "posts.creator_id", "=", "users.id")
-      .where('posts.id', postId)
-    return result[0]
+      .where("posts.id", postId);
+    return result[0];
+  };
+  public findLikeDislike = async (
+    likeDislikeToFind: LikesDislikesDB
+  ): Promise<POST_LIKE | null> => {
+    const [likeDislikeDB]: LikesDislikesDB[] = await BaseDataBase.connection(
+      PostDataBase.TABLE_LIKES_DISLIKES
+    )
+      .select()
+      .where({
+        user_id: likeDislikeToFind.user_id,
+        post_id: likeDislikeToFind.post_id,
+      });
+    if (likeDislikeDB) {
+      return likeDislikeDB.like === 1
+        ? POST_LIKE.JA_CURTIU
+        : POST_LIKE.JA_DESCURTIU;
+    } else {
+      return null;
+    }
+  };
+  public removeLikeDislike = async (
+    likeDislikeDB: LikesDislikesDB
+  ): Promise<void> => {
+    await BaseDataBase.connection(PostDataBase.TABLE_LIKES_DISLIKES)
+      .delete()
+      .where({
+        user_id: likeDislikeDB.user_id,
+        post_id: likeDislikeDB.post_id,
+      });
+  };
+  public updateLikeDislike = async (
+    likeDislikeDB: LikesDislikesDB
+  ) => {
+    await BaseDataBase.connection(PostDataBase.TABLE_LIKES_DISLIKES)
+      .update(likeDislikeDB)
+      .where({
+        user_id: likeDislikeDB.user_id,
+        post_id: likeDislikeDB.post_id,
+      });
   };
 }
